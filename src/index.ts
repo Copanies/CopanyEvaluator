@@ -26,25 +26,32 @@ const app = new Hono<{ Bindings: Env }>();
 app.get('/', (c) => c.text('Hono!'));
 
 app.post('/github-webhook', async (c) => {
+	console.log('Received GitHub webhook request');
 	const body = await c.req.text();
+	console.log('Request body:', body.substring(0, 200) + '...'); // Only print first 200 chars to avoid long logs
 	const signature = c.req.header('x-hub-signature-256') || '';
+	console.log('Signature:', signature);
 	const secret = c.env.GITHUB_WEBHOOK_SECRET;
 	7;
 
 	const isValid = await verify(secret, body, signature);
+	console.log('Signature verification result:', isValid);
 	if (!isValid) {
 		return c.text('Invalid signature', 401);
 	}
 
 	const payload = JSON.parse(body);
-	console.log(payload);
+	console.log('Parsed payload:', payload);
 
 	if (payload.action === 'closed' && payload.pull_request?.merged) {
+		console.log('Processing merged PR');
 		const installationId = payload.installation.id;
+		console.log('Installation ID:', installationId);
 		const prUrl = payload.pull_request.url;
+		console.log('PR URL:', prUrl);
 
-		// TODO: 获取 Installation Token -> 拉 PR diff -> 调用 AI
-		// 生成 JWT
+		// TODO: Get Installation Token -> Fetch PR diff -> Call AI
+		// Generate JWT
 		const now = Math.floor(Date.now() / 1000);
 		const token = await jwt.sign(
 			{
@@ -56,7 +63,8 @@ app.post('/github-webhook', async (c) => {
 			{ algorithm: 'RS256' }
 		);
 
-		// 获取 Installation Token
+		// Get Installation Token
+		console.log('Starting to fetch Installation Token...');
 		const tokenResponse = await fetch(`https://api.github.com/app/installations/${installationId}/access_tokens`, {
 			method: 'POST',
 			headers: {
@@ -64,9 +72,13 @@ app.post('/github-webhook', async (c) => {
 				Accept: 'application/vnd.github.v3+json',
 			},
 		});
-		const { token: installationToken } = (await tokenResponse.json()) as { token: string };
+		const tokenData = (await tokenResponse.json()) as { token: string };
+		console.log('Token response status:', tokenResponse.status);
+		// Don't log the actual token, this is a security risk
+		console.log('Received token data:', { hasToken: !!tokenData.token });
+		const { token: installationToken } = tokenData;
 
-		// 获取 PR diff
+		// Get PR diff
 		const diffResponse = await fetch(prUrl, {
 			headers: {
 				Authorization: `Bearer ${installationToken}`,
@@ -75,7 +87,7 @@ app.post('/github-webhook', async (c) => {
 		});
 		const diff = await diffResponse.text();
 
-		// TODO: 调用 AI 分析 diff
+		// TODO: Call AI to analyze diff
 		console.log('Merged PR:', prUrl, diff);
 
 		return c.text('PR merged event received');

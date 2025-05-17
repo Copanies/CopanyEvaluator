@@ -12,9 +12,10 @@
  */
 
 import { verify } from '@octokit/webhooks-methods';
+import { Octokit } from '@octokit/rest';
 import { Hono } from 'hono';
 import jwt from '@tsndr/cloudflare-worker-jwt';
-// import { verify } from '@octokit/webhooks-methods';
+
 type Env = {
 	GITHUB_WEBHOOK_SECRET: string;
 	GITHUB_APP_ID: string;
@@ -26,13 +27,9 @@ const app = new Hono<{ Bindings: Env }>();
 app.get('/', (c) => c.text('Hono!'));
 
 app.post('/github-webhook', async (c) => {
-	console.log('Received GitHub webhook request');
 	const body = await c.req.text();
-	console.log('Request body:', body.substring(0, 200) + '...'); // Only print first 200 chars to avoid long logs
 	const signature = c.req.header('x-hub-signature-256') || '';
-	console.log('Signature:', signature);
 	const secret = c.env.GITHUB_WEBHOOK_SECRET;
-	7;
 
 	const isValid = await verify(secret, body, signature);
 	console.log('Signature verification result:', isValid);
@@ -49,48 +46,101 @@ app.post('/github-webhook', async (c) => {
 		console.log('Installation ID:', installationId);
 		const prUrl = payload.pull_request.url;
 		console.log('PR URL:', prUrl);
+		const repoOwner = payload.repository.owner.login;
+		const repoName = payload.repository.name;
+		const pullNumber = payload.pull_request.number;
 
-		// TODO: Get Installation Token -> Fetch PR diff -> Call AI
 		// Generate JWT
 		const now = Math.floor(Date.now() / 1000);
-		const token = await jwt.sign(
-			{
-				iat: now,
-				exp: now + 60,
-				iss: c.env.GITHUB_APP_ID,
-			},
-			c.env.GITHUB_APP_PRIVATE_KEY,
-			{ algorithm: 'RS256' }
-		);
 
-		// Get Installation Token
-		console.log('Starting to fetch Installation Token...');
-		const tokenResponse = await fetch(`https://api.github.com/app/installations/${installationId}/access_tokens`, {
-			method: 'POST',
-			headers: {
-				Authorization: `Bearer ${token}`,
-				Accept: 'application/vnd.github.v3+json',
-			},
-		});
-		const tokenData = (await tokenResponse.json()) as { token: string };
-		console.log('Token response status:', tokenResponse.status);
-		// Don't log the actual token, this is a security risk
-		console.log('Received token data:', { hasToken: !!tokenData.token });
-		const { token: installationToken } = tokenData;
+		// Handle private key - decode Base64 format
+		let privateKey = c.env.GITHUB_APP_PRIVATE_KEY;
+		try {
+			privateKey = atob(privateKey);
+		} catch (e) {
+			console.error('Failed to decode private key, using original format:', e);
+		}
 
-		// Get PR diff
-		const diffResponse = await fetch(prUrl, {
-			headers: {
-				Authorization: `Bearer ${installationToken}`,
-				Accept: 'application/vnd.github.v3.diff',
-			},
-		});
-		const diff = await diffResponse.text();
+		console.log('Attempting to sign with JWT');
 
-		// TODO: Call AI to analyze diff
-		console.log('Merged PR:', prUrl, diff);
+		try {
+			const token = await jwt.sign(
+				{
+					iat: now,
+					exp: now + 60,
+					iss: c.env.GITHUB_APP_ID,
+				},
+				privateKey,
+				{ algorithm: 'RS256' }
+			);
 
-		return c.text('PR merged event received');
+			// Create a temporary Octokit instance to get installation token
+			console.log('Creating Octokit instance with JWT');
+			const appOctokit = new Octokit({
+				auth: token,
+				userAgent: 'Copany-bot',
+			});
+
+			// Get installation token
+			console.log('Getting installation token');
+			const { data: tokenData } = await appOctokit.apps.createInstallationAccessToken({
+				installation_id: installationId,
+			});
+			console.log('Received installation token:', { hasToken: !!tokenData.token });
+
+			// Create a new Octokit instance with installation token
+			console.log('Creating Octokit instance with installation token');
+			const octokit = new Octokit({
+				auth: tokenData.token,
+				userAgent: 'Copany-bot',
+			});
+
+			// 首先获取PR的完整信息
+			console.log('Getting PR details');
+			const { data: prData } = await octokit.pulls.get({
+				owner: repoOwner,
+				repo: repoName,
+				pull_number: pullNumber,
+			});
+
+			// 提取PR的重要信息
+			const prTitle = prData.title;
+			const prDescription = prData.body || '';
+			const prAuthor = prData.user?.login;
+			const prBaseRef = prData.base.ref;
+			const prHeadRef = prData.head.ref;
+			const prAdditions = prData.additions;
+			const prDeletions = prData.deletions;
+			const prChangedFiles = prData.changed_files;
+
+			console.log('PR Title:', prTitle);
+			console.log('PR Author:', prAuthor);
+			console.log('PR Description preview:', prDescription.slice(0, 100) + (prDescription.length > 100 ? '...' : ''));
+			console.log('PR Stats:', `${prChangedFiles} files changed, ${prAdditions} additions, ${prDeletions} deletions`);
+			console.log('PR Branches:', `prHeadRef:${prHeadRef} → prBaseRef:${prBaseRef}`);
+
+			// 然后获取PR差异
+			console.log('Getting PR diff');
+			const { data: diffData } = await octokit.pulls.get({
+				owner: repoOwner,
+				repo: repoName,
+				pull_number: pullNumber,
+				mediaType: {
+					format: 'diff',
+				},
+			});
+
+			// TODO: Call AI to analyze diff
+			console.log('Merged PR:', prUrl);
+			// Safely handle diffData regardless of its type
+			const diffStr = String(diffData);
+			console.log('Diff preview:', diffStr);
+
+			return c.text('PR merged event received');
+		} catch (error: any) {
+			console.error('Error processing webhook:', error);
+			return c.text(`Error: ${error.message}`, 500);
+		}
 	}
 
 	return c.text('Event ignored');

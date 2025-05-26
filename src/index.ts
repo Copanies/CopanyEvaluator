@@ -22,14 +22,19 @@ type Env = {
 	GITHUB_APP_PRIVATE_KEY: string;
 };
 
+const DEV_GITHUB_APP_PRIVATE_KEY =
+	'LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBeHEvcGRXU1l4QjhXdHdqbWZZYUNRZS9TTldEY1E4QkJzWm9Kd1pyczVrc3M4Tys3CnlUYVNPYmFGeXB2ZnpnK1h2akUxSjhFZ3VKUzltTjhQQ0N2dE5NbEliOHkwWDhHMzlERjU5S3ZyQ1pTcW96a3QKYzBsUkxkUTRRK01EY2hwbWErend3TjhTdk1ub2YxUllBdVNJQ1dYMlFQRmtaRjdQQVRDajZubTlPN2RyVkdSegpQdTZQRzRnalZwVzY4WXlSVFN6YzJUMkNQcGVkaFdFaG04VnZ4WmxpS2hCTFgvS3FEYkl3Wkc5RXZBRmVWWWhTCjJkY3d3WURRdzVkcVNBUVlHQXFFZG5PaHcxdXpvVFVwMkN5aVFzTTc3eEtCWVJjN2ZnbkZyamRicW13ZEIyUHIKY0lRck4zaVNDOUpJcXlOTkFVTmt5c0ZIeHZyYXNjQmZpSEdqNVFJREFRQUJBb0lCQUZ0V28weUVZblpHbEhxdwpiTVZvQUptdlZrT1RzNjZ4dzRHUi9zb3lIcFlBR1RqcC9Mb1RqRVZiMDBYQlFySElHVW9sOVBuQm52azc1NjFQClhlbXp4K2hzWUJDRldxWnF0OVphcUdZQ1lwcVU3Wno3dkJrenEwNFdNWWVENVNHZllWWmNKcEdEKzJrdXFPTmcKTXRXaG1hZzRaMnlUakVOWUVuSEptcEZBUmU0ZEpGNml1THgvTGVhbkI5ZkxxUytnMGFQc2QzMVZmQWNWRjh4agp5WW15Z0cvZjRWbE84cWtYWVQ2QVRlWDBYNlJVVEoweEhEanpzOEFJS1piWHY2dVNZajZ5dUVsMGRxMGRyRmpFClVyWGFYQkswcXJ5NTdsbys5eW9JRGFjdTBmYXlNdU9YMXdkY3NTY0xtbjhzdDJsZFFIekQ2TFBvUVFQaDVnc08KaWxKMjJFRUNnWUVBN2pUalM4dFZadlFNNDJmalB0dUVVQW14WHlQTVlVSnhvU0JpODkvRUtTZzZVYXE0ZVJoRApHdWVqU1hFNnJMN1pVbUh1M25UL3FKcU1DNmpVMmhPc3VmZTFtaWtZcFg0RVB0S0VZbVhBSW81YlV3eWxtN3VwCnFJcWc0dDRiSmdCRENTNUtSSCtzelIybkxUM2tmcUNNbThSclRzQXdUd0J0NnZvdFJHVXNmUnNDZ1lFQTFZZFEKQXlpZTZod255WWJ2WWlpMWN0aWpvdUJ0eVZNRFU4ekRRckZNWHpPN28yS0V1R0Z1ZkZaTzkzdXU1M0tXS1NzNQpRWFkrbk1rTUVuaHJva0lPRzRBQUtER0RPZnJ3TC9YVzRtcEtvVTlpNXJLSHVMOENrUnRpK1lZTHJucnpCY3V2CmhLLzF2Njc4ZWxSVFNsUmZJOExiVFhHY1dadHR1QUNLNXpIeGN2OENnWUVBcmxzajdEeWUvRWF5a0ZsZ2FvZi8KSng2Uko5UnFLdDZaa1pqRkZVQzZzbTF4a29sbGthMkNvTlRnSGtlMDdQQ2MzY0kxTjd0bnpwK2cxbi96bk5ROQozN2xDd2Q1RzNndUpTL3FIVUFhdVJoenhGNjd3SVRlUmpYNDdHUlA5eHlqMTZHaHJrQXZzRGc4Z2FPc2VydGtSClVvckpDTkdBQ3JPRHdUVHhvVmgwNGZVQ2dZQjhtNE5ZNUlxZ2FoL1ozakd5WWJsSnRSMEJQdUV5bkl3VGlpbmsKc0p5MTdmV3hLaHZ6a1lBdGRSeU9GaEtDcEg3MnRXK3JRUHJXK2doZWV3R3M1Y2xmeVBuT2V0NXVwbjhtTGR2aApzMCtzQlN6ZEhoQlFBci9YdUZpdzdzWEFZNldRbTBYcE05cEFxemhSbHdZb0dVYVFFdlZ4b3p3dm1xR1R3RlZQCkIvazBOd0tCZ1FERWIrcTVxK2ZKUzZOMUg2emRjQUNsODFYdTc5U0FLY3N6eHlwSlp0eUZ4ak4rVTBrbFcydTcKVUF5UzNSMmptMkd5MG50V2pVdlU2bWhoazVCRm1rWWxVbXdqOGIxQ2JDTGVha1FHMXgvREFyRktCMHliaXB5ZQp4cFJCc254TVNMQnhRZktRMFV6Qjd3NnF3VHhHM0xCeFBxSEhmWThSZnFqYllOSEo3ODdPV3c9PQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo';
+const DEV_GITHUB_APP_ID = '1324212';
+const DEV_GITHUB_WEBHOOK_SECRET = 'MkkzFbeGTmfxMNa8c1WAPvkxZ2CvLRMk1fmAF25qdM8=';
 const app = new Hono<{ Bindings: Env }>();
 
 app.get('/', (c) => c.text('Hono!'));
 
 app.post('/github-webhook', async (c) => {
+	// GitHub webhook documentation: https://docs.github.com/en/webhooks/webhook-events-and-payloads?actionType=synchronize#pull_request
 	const body = await c.req.text();
 	const signature = c.req.header('x-hub-signature-256') || '';
-	const secret = c.env.GITHUB_WEBHOOK_SECRET;
+	const secret = c.env.GITHUB_WEBHOOK_SECRET ? c.env.GITHUB_WEBHOOK_SECRET : DEV_GITHUB_WEBHOOK_SECRET;
 
 	const isValid = await verify(secret, body, signature);
 	console.log('Signature verification result:', isValid);
@@ -40,7 +45,7 @@ app.post('/github-webhook', async (c) => {
 	const payload = JSON.parse(body);
 	console.log('Parsed payload:', payload);
 
-	if (payload.action === 'closed' && payload.pull_request?.merged) {
+	if (payload.action === 'opened' || payload.action === 'reopened' || payload.action === 'synchronize') {
 		console.log('Processing merged PR');
 		const installationId = payload.installation.id;
 		console.log('Installation ID:', installationId);
@@ -54,7 +59,7 @@ app.post('/github-webhook', async (c) => {
 		const now = Math.floor(Date.now() / 1000);
 
 		// Handle private key - decode Base64 format
-		let privateKey = c.env.GITHUB_APP_PRIVATE_KEY;
+		let privateKey = c.env.GITHUB_APP_PRIVATE_KEY ? c.env.GITHUB_APP_PRIVATE_KEY : DEV_GITHUB_APP_PRIVATE_KEY;
 		try {
 			privateKey = atob(privateKey);
 		} catch (e) {
@@ -68,7 +73,7 @@ app.post('/github-webhook', async (c) => {
 				{
 					iat: now,
 					exp: now + 60,
-					iss: c.env.GITHUB_APP_ID,
+					iss: c.env.GITHUB_APP_ID ? c.env.GITHUB_APP_ID : DEV_GITHUB_APP_ID,
 				},
 				privateKey,
 				{ algorithm: 'RS256' }

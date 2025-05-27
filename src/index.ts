@@ -183,54 +183,24 @@ app.post('/github-webhook', async (c) => {
 			const messages = [
 				{
 					role: 'system',
-					content: `你是一个专业的开源项目审查助理，擅长评估 Pull Request(PR)对项目的实际贡献。  
-				请根据以下维度对该 PR 进行分析并给出评分, 并输出详细解释:
-				1. 功能价值（是否解决了重要需求或添加了关键功能）
-				2. 技术复杂度（是否有技术挑战、模块间耦合、性能优化等）  
-				3. 影响范围（是否影响了核心模块或项目整体架构）  
-				4. 代码质量（是否提升了代码整洁性、可维护性、测试覆盖等）  
-				5. 风险控制（是否存在潜在 bug 或部署难度）
-
-				请返回一个JSON对象,包含以下字段:
-				{
-					"analysis": {
-						"functionalValue": {
-							"score": "number", // 总分(0-10)
-							"reason": "string" // 功能价值评分理由
-						},
-						"technicalComplexity": {
-							"score": "number", // 总分(0-10)
-							"reason": "string" // 技术复杂度评分理由
-						},
-						"impactScope": {
-							"score": "number", // 总分(0-10)
-							"reason": "string" // 影响范围评分理由
-						},
-						"codeQuality": {
-							"score": "number", // 总分(0-10)
-							"reason": "string" // 代码质量评分理由
-						},
-						"riskControl": {
-							"score": "number", // 总分(0-10)
-							"reason": "string" // 风险控制评分理由
-						}
-					},
-					"suggestion": "string" // 改进建议(可选)
-				}
+					content: `你是一个专业的项目分析师，请根据我之后提供给你的 Pull Request 的代码变更，帮我总结该 PR 的主要内容和意义。输出结构请遵循以下格式：
+					【功能改动摘要】
+					- 简要说明该 PR 实现了哪些功能或修复了哪些问题
+					- 是否添加了新能力、对用户或产品是否有影响
+					【技术改动摘要】
+					- 代码结构发生了哪些变化（模块拆分、重构、性能优化等）
+					- 涉及的技术难点与解决方式- 是否提升了代码质量（如注释、测试、重构）
+					【潜在影响与价值】
+					- 该 PR 改动是否影响核心功能- 是否大幅提升了系统性能、稳定性、可维护性
 				`,
 				},
 				{
 					role: 'user',
 					content: `
-				请分析以下PR:
-				PR的标题: ${prTitle}
-				PR的描述: ${prDescription}
-				PR的作者: ${prAuthor}
-				PR的PR链接: ${prUrl}
-				PR的PR编号: ${pullNumber}
-				PR的PR分支: ${prHeadRef}
-				PR的PR分支: ${prBaseRef}
-				PR的diff: ${filteredDiffStr}
+					以下是 PR 的详细信息:
+					PR的标题: ${prTitle};
+					PR的描述: ${prDescription};
+					PR的diff: ${filteredDiffStr};
 				`,
 				},
 			];

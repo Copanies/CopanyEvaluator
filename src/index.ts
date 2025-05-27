@@ -40,7 +40,7 @@ app.post('/github-webhook', async (c) => {
 	}
 
 	const payload = JSON.parse(body);
-	console.log('Parsed payload:', payload);
+	// console.log('Parsed payload:', payload);
 
 	if (payload.action === 'opened' || payload.action === 'reopened' || payload.action === 'synchronize') {
 		console.log('Processing merged PR');
@@ -168,7 +168,7 @@ app.post('/github-webhook', async (c) => {
 					// block.includes('@generated') ||
 					// block.includes('auto-generated') ||
 					// block.includes('automatically generated');
-
+					console.log(fileName, 'isGenerated:', isGenerated);
 					return !isGenerated;
 				});
 
@@ -176,7 +176,6 @@ app.post('/github-webhook', async (c) => {
 				return filteredBlocks.length > 0 ? 'diff --git' + filteredBlocks.join('diff --git') : '没有找到非自动生成的代码改动';
 			}
 
-			console.log('Diff:', diffStr);
 			const filteredDiffStr = filterGeneratedCode(diffStr);
 			console.log('Filtered diff:', filteredDiffStr);
 
@@ -205,8 +204,47 @@ app.post('/github-webhook', async (c) => {
 				},
 			];
 
-			const ai_response = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages });
-			console.log('AI response:', ai_response);
+			// const llama3_2_3b_instruct_response = await c.env.AI.run('@cf/meta/llama-3.2-3b-instruct', {
+			// 	messages,
+			// 	max_tokens: 1024,
+			// });
+			// console.log('llama3_2_3b_instruct_response: $0.051 per M input tokens $0.34 per M output tokens', llama3_2_3b_instruct_response);
+
+			const llama3_2_11b_vision_instruct_response = await c.env.AI.run('@cf/meta/llama-3.2-11b-vision-instruct', {
+				messages,
+				max_tokens: 1024,
+			});
+			console.log(
+				'llama3_2_11b_vision_instruct_response: $0.049 per M input tokens $0.68 per M output tokens',
+				llama3_2_11b_vision_instruct_response
+			);
+
+			// const llama3_3_70b_instruct_fp8_fast_response = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+			// 	messages,
+			// 	max_tokens: 1024,
+			// });
+			// console.log(
+			// 	'llama3_3_70b_instruct_fp8_fast_response: $0.29 per M input tokens $2.25 per M output tokens',
+			// 	llama3_3_70b_instruct_fp8_fast_response
+			// );
+
+			// const llama4_scout_17b_16e_instruct_response = await c.env.AI.run('@cf/meta/llama-4-scout-17b-16e-instruct', {
+			// 	messages,
+			// 	max_tokens: 1024,
+			// });
+			// console.log(
+			// 	'llama4_scout_17b_16e_instruct_response: $0.27 per M input tokens $0.85 per M output tokens',
+			// 	llama4_scout_17b_16e_instruct_response
+			// );
+
+			// const deepseek_r1_distill_qwen_32b_response = await c.env.AI.run('@cf/deepseek-ai/deepseek-r1-distill-qwen-32b', {
+			// 	messages,
+			// 	max_tokens: 1024,
+			// });
+			// console.log(
+			// 	'deepseek_r1_distill_qwen_32b_response: $0.5 per M input tokens $4.88 per M output tokens',
+			// 	deepseek_r1_distill_qwen_32b_response
+			// );
 
 			return c.text('PR merged event received');
 		} catch (error: any) {

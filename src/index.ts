@@ -17,15 +17,12 @@ import { Hono } from 'hono';
 import jwt from '@tsndr/cloudflare-worker-jwt';
 
 type Env = {
+	AI: Ai;
 	GITHUB_WEBHOOK_SECRET: string;
 	GITHUB_APP_ID: string;
 	GITHUB_APP_PRIVATE_KEY: string;
 };
 
-const DEV_GITHUB_APP_PRIVATE_KEY =
-	'LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBeHEvcGRXU1l4QjhXdHdqbWZZYUNRZS9TTldEY1E4QkJzWm9Kd1pyczVrc3M4Tys3CnlUYVNPYmFGeXB2ZnpnK1h2akUxSjhFZ3VKUzltTjhQQ0N2dE5NbEliOHkwWDhHMzlERjU5S3ZyQ1pTcW96a3QKYzBsUkxkUTRRK01EY2hwbWErend3TjhTdk1ub2YxUllBdVNJQ1dYMlFQRmtaRjdQQVRDajZubTlPN2RyVkdSegpQdTZQRzRnalZwVzY4WXlSVFN6YzJUMkNQcGVkaFdFaG04VnZ4WmxpS2hCTFgvS3FEYkl3Wkc5RXZBRmVWWWhTCjJkY3d3WURRdzVkcVNBUVlHQXFFZG5PaHcxdXpvVFVwMkN5aVFzTTc3eEtCWVJjN2ZnbkZyamRicW13ZEIyUHIKY0lRck4zaVNDOUpJcXlOTkFVTmt5c0ZIeHZyYXNjQmZpSEdqNVFJREFRQUJBb0lCQUZ0V28weUVZblpHbEhxdwpiTVZvQUptdlZrT1RzNjZ4dzRHUi9zb3lIcFlBR1RqcC9Mb1RqRVZiMDBYQlFySElHVW9sOVBuQm52azc1NjFQClhlbXp4K2hzWUJDRldxWnF0OVphcUdZQ1lwcVU3Wno3dkJrenEwNFdNWWVENVNHZllWWmNKcEdEKzJrdXFPTmcKTXRXaG1hZzRaMnlUakVOWUVuSEptcEZBUmU0ZEpGNml1THgvTGVhbkI5ZkxxUytnMGFQc2QzMVZmQWNWRjh4agp5WW15Z0cvZjRWbE84cWtYWVQ2QVRlWDBYNlJVVEoweEhEanpzOEFJS1piWHY2dVNZajZ5dUVsMGRxMGRyRmpFClVyWGFYQkswcXJ5NTdsbys5eW9JRGFjdTBmYXlNdU9YMXdkY3NTY0xtbjhzdDJsZFFIekQ2TFBvUVFQaDVnc08KaWxKMjJFRUNnWUVBN2pUalM4dFZadlFNNDJmalB0dUVVQW14WHlQTVlVSnhvU0JpODkvRUtTZzZVYXE0ZVJoRApHdWVqU1hFNnJMN1pVbUh1M25UL3FKcU1DNmpVMmhPc3VmZTFtaWtZcFg0RVB0S0VZbVhBSW81YlV3eWxtN3VwCnFJcWc0dDRiSmdCRENTNUtSSCtzelIybkxUM2tmcUNNbThSclRzQXdUd0J0NnZvdFJHVXNmUnNDZ1lFQTFZZFEKQXlpZTZod255WWJ2WWlpMWN0aWpvdUJ0eVZNRFU4ekRRckZNWHpPN28yS0V1R0Z1ZkZaTzkzdXU1M0tXS1NzNQpRWFkrbk1rTUVuaHJva0lPRzRBQUtER0RPZnJ3TC9YVzRtcEtvVTlpNXJLSHVMOENrUnRpK1lZTHJucnpCY3V2CmhLLzF2Njc4ZWxSVFNsUmZJOExiVFhHY1dadHR1QUNLNXpIeGN2OENnWUVBcmxzajdEeWUvRWF5a0ZsZ2FvZi8KSng2Uko5UnFLdDZaa1pqRkZVQzZzbTF4a29sbGthMkNvTlRnSGtlMDdQQ2MzY0kxTjd0bnpwK2cxbi96bk5ROQozN2xDd2Q1RzNndUpTL3FIVUFhdVJoenhGNjd3SVRlUmpYNDdHUlA5eHlqMTZHaHJrQXZzRGc4Z2FPc2VydGtSClVvckpDTkdBQ3JPRHdUVHhvVmgwNGZVQ2dZQjhtNE5ZNUlxZ2FoL1ozakd5WWJsSnRSMEJQdUV5bkl3VGlpbmsKc0p5MTdmV3hLaHZ6a1lBdGRSeU9GaEtDcEg3MnRXK3JRUHJXK2doZWV3R3M1Y2xmeVBuT2V0NXVwbjhtTGR2aApzMCtzQlN6ZEhoQlFBci9YdUZpdzdzWEFZNldRbTBYcE05cEFxemhSbHdZb0dVYVFFdlZ4b3p3dm1xR1R3RlZQCkIvazBOd0tCZ1FERWIrcTVxK2ZKUzZOMUg2emRjQUNsODFYdTc5U0FLY3N6eHlwSlp0eUZ4ak4rVTBrbFcydTcKVUF5UzNSMmptMkd5MG50V2pVdlU2bWhoazVCRm1rWWxVbXdqOGIxQ2JDTGVha1FHMXgvREFyRktCMHliaXB5ZQp4cFJCc254TVNMQnhRZktRMFV6Qjd3NnF3VHhHM0xCeFBxSEhmWThSZnFqYllOSEo3ODdPV3c9PQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo';
-const DEV_GITHUB_APP_ID = '1324212';
-const DEV_GITHUB_WEBHOOK_SECRET = 'MkkzFbeGTmfxMNa8c1WAPvkxZ2CvLRMk1fmAF25qdM8=';
 const app = new Hono<{ Bindings: Env }>();
 
 app.get('/', (c) => c.text('Hono!'));
@@ -34,7 +31,7 @@ app.post('/github-webhook', async (c) => {
 	// GitHub webhook documentation: https://docs.github.com/en/webhooks/webhook-events-and-payloads?actionType=synchronize#pull_request
 	const body = await c.req.text();
 	const signature = c.req.header('x-hub-signature-256') || '';
-	const secret = c.env.GITHUB_WEBHOOK_SECRET ? c.env.GITHUB_WEBHOOK_SECRET : DEV_GITHUB_WEBHOOK_SECRET;
+	const secret = c.env.GITHUB_WEBHOOK_SECRET;
 
 	const isValid = await verify(secret, body, signature);
 	console.log('Signature verification result:', isValid);
@@ -59,7 +56,7 @@ app.post('/github-webhook', async (c) => {
 		const now = Math.floor(Date.now() / 1000);
 
 		// Handle private key - decode Base64 format
-		let privateKey = c.env.GITHUB_APP_PRIVATE_KEY ? c.env.GITHUB_APP_PRIVATE_KEY : DEV_GITHUB_APP_PRIVATE_KEY;
+		let privateKey = c.env.GITHUB_APP_PRIVATE_KEY;
 		try {
 			privateKey = atob(privateKey);
 		} catch (e) {
@@ -73,7 +70,7 @@ app.post('/github-webhook', async (c) => {
 				{
 					iat: now,
 					exp: now + 60,
-					iss: c.env.GITHUB_APP_ID ? c.env.GITHUB_APP_ID : DEV_GITHUB_APP_ID,
+					iss: c.env.GITHUB_APP_ID,
 				},
 				privateKey,
 				{ algorithm: 'RS256' }
@@ -135,11 +132,67 @@ app.post('/github-webhook', async (c) => {
 				},
 			});
 
-			// TODO: Call AI to analyze diff
 			console.log('Merged PR:', prUrl);
-			// Safely handle diffData regardless of its type
 			const diffStr = String(diffData);
 			console.log('Diff preview:', diffStr);
+
+			const messages = [
+				{
+					role: 'system',
+					content: `你是一个专业的开源项目审查助理，擅长评估 Pull Request(PR)对项目的实际贡献。  
+				请根据以下维度对该 PR 进行分析并给出评分, 并输出详细解释:
+				1. 功能价值（是否解决了重要需求或添加了关键功能）
+				2. 技术复杂度（是否有技术挑战、模块间耦合、性能优化等）  
+				3. 影响范围（是否影响了核心模块或项目整体架构）  
+				4. 代码质量（是否提升了代码整洁性、可维护性、测试覆盖等）  
+				5. 风险控制（是否存在潜在 bug 或部署难度）
+
+				请返回一个JSON对象,包含以下字段:
+				{
+					"analysis": {
+						"functionalValue": {
+							"score": "number", // 总分(0-10)
+							"reason": "string" // 功能价值评分理由
+						},
+						"technicalComplexity": {
+							"score": "number", // 总分(0-10)
+							"reason": "string" // 技术复杂度评分理由
+						},
+						"impactScope": {
+							"score": "number", // 总分(0-10)
+							"reason": "string" // 影响范围评分理由
+						},
+						"codeQuality": {
+							"score": "number", // 总分(0-10)
+							"reason": "string" // 代码质量评分理由
+						},
+						"riskControl": {
+							"score": "number", // 总分(0-10)
+							"reason": "string" // 风险控制评分理由
+						}
+					},
+					"suggestion": "string" // 改进建议(可选)
+				}
+				`,
+				},
+				{
+					role: 'user',
+					content: `
+				请分析以下PR:
+				PR的标题: ${prTitle}
+				PR的描述: ${prDescription}
+				PR的作者: ${prAuthor}
+				PR的PR链接: ${prUrl}
+				PR的PR编号: ${pullNumber}
+				PR的PR分支: ${prHeadRef}
+				PR的PR分支: ${prBaseRef}
+				PR的diff: ${diffStr}
+				`,
+				},
+			];
+
+			const ai_response = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages });
+			console.log('AI response:', ai_response);
 
 			return c.text('PR merged event received');
 		} catch (error: any) {
